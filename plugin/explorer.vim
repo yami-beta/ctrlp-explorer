@@ -6,6 +6,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 command! -nargs=? -complete=dir CtrlPExplorer call ctrlp#init(ctrlp#explorer#id(), {'dir': <q-args>})
+command! CtrlPExplorerWithBufDir call ctrlp#init(ctrlp#explorer#id(), {'dir': expand('%:p:h')})
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
