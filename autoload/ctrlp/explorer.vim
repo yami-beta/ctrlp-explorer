@@ -21,8 +21,10 @@ endfunction
 function! ctrlp#explorer#init(...) abort
   let s:cwd = fnamemodify(getcwd(), ":p")
   " ドットファイルを含む
-  let s:list = map([".."] + glob(s:cwd . "/*", 0, 1) + glob(s:cwd . "/.??*", 0, 1), 'fnamemodify(v:val, ":t") . (isdirectory(v:val) ? "/" : "")')
-  return s:list
+  " WindowsとMacで結果が異なるため，新しいglobパターンが必要
+  " Windowsでは，'./', '../' の2つが，glob(s:cwd . "/.??*", 0, 1) によって余計に含まれてしまう
+  let filelist = map([".."] + glob(s:cwd . "/*", 0, 1) + glob(s:cwd . "/.??*", 0, 1), 'fnamemodify(v:val, ":t") . (isdirectory(v:val) ? "/" : "")')
+  return filelist
 endfunction
 
 function! s:convert_path(path) abort
