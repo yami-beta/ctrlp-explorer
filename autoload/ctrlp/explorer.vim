@@ -8,6 +8,7 @@ set cpo&vim
 let g:ctrlp_ext_var = add(get(g:, 'ctrlp_ext_vars', []), {
       \ 'init': 'ctrlp#explorer#init()',
       \ 'accept': 'ctrlp#explorer#accept',
+      \ 'exit': 'ctrlp#explorer#exit()',
       \ 'lname': 'explorer extension',
       \ 'sname': 'explorer',
       \ 'type': 'path',
@@ -18,7 +19,18 @@ function! ctrlp#explorer#id() abort
   return s:id
 endfunction
 
+function! s:mapkey() abort
+  nnoremap <buffer> <c-r> :call ctrlp#explorer#accept('r', ctrlp#getcline())<cr>
+endfunction
+
+function! s:unmapkey() abort
+  if mapcheck('<c-r>', 'n') !=# ''
+    nunmap <buffer> <c-r>
+  endif
+endfunction
+
 function! ctrlp#explorer#init(...) abort
+  call s:mapkey()
   let s:cwd = fnamemodify(getcwd(), ":p")
   " ドットファイルを含む
   " WindowsとMacで結果が異なるため，新しいglobパターンが必要
@@ -40,9 +52,26 @@ function! ctrlp#explorer#accept(mode, str) abort
   if isdirectory(path)
     " cwdをpathに変更しCtrlPExplorerを起動
     call ctrlp#init(ctrlp#explorer#id(), {'dir': path})
-  else
-    call ctrlp#acceptfile(a:mode, path)
+    return
   endif
+  if a:mode ==# 'r'
+    call s:rename_file(path)
+    call ctrlp#init(ctrlp#explorer#id(), {'dir': s:cwd})
+    return
+  endif
+  call ctrlp#acceptfile(a:mode, path)
+endfunction
+
+function! s:rename_file(target_path) abort
+  let target_dir = fnamemodify(a:target_path, ':p:h')
+  let target_filename = fnamemodify(a:target_path, ':p:t')
+  let new_filename = input('filename: ', target_filename)
+  let new_path = target_dir . '/' . new_filename
+  call rename(a:target_path, new_path)
+endfunction
+
+function! ctrlp#explorer#exit() abort
+  call s:unmapkey()
 endfunction
 
 let &cpo = s:save_cpo
