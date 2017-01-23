@@ -46,6 +46,12 @@ function! s:convert_path(path) abort
   return fnamemodify(simplify(path), ":p")
 endfunction
 
+function! s:accept(mode, path) abort
+  let open_func_dic = get(g:, 'ctrlp_open_func', {})
+  let open_func = get(open_func_dic, 'files', 'ctrlp#acceptfile')
+  call call(open_func, [a:mode, a:path])
+endfunction
+
 function! ctrlp#explorer#accept(mode, str) abort
   call ctrlp#exit()
   let path = s:convert_path(a:str)
@@ -59,7 +65,7 @@ function! ctrlp#explorer#accept(mode, str) abort
     call ctrlp#init(ctrlp#explorer#id(), {'dir': s:cwd})
     return
   endif
-  call ctrlp#acceptfile(a:mode, path)
+  call s:accept(a:mode, path)
 endfunction
 
 function! s:rename_file(target_path) abort
