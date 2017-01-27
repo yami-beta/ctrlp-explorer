@@ -21,11 +21,15 @@ endfunction
 
 function! s:mapkey() abort
   nnoremap <buffer> <c-r> :call ctrlp#explorer#accept('r', ctrlp#getcline())<cr>
+  nnoremap <buffer> <c-d> :call ctrlp#explorer#accept('d', ctrlp#getcline())<cr>
 endfunction
 
 function! s:unmapkey() abort
   if mapcheck('<c-r>', 'n') !=# ''
     nunmap <buffer> <c-r>
+  endif
+  if mapcheck('<c-d>', 'n') !=# ''
+    nunmap <buffer> <c-d>
   endif
 endfunction
 
@@ -54,6 +58,15 @@ function! s:rename_file(target_path) abort
   call rename(a:target_path, new_path)
 endfunction
 
+function! s:delete_file(target_path) abort
+  let target_path = fnamemodify(a:target_path, ':p')
+  let target_filename = fnamemodify(target_path, ':t')
+  let do_delete = confirm('Delete '.target_filename.' ? (y/n)', "&yes\n&no", 0)
+  if do_delete ==# 1
+    call delete(target_path)
+  endif
+endfunction
+
 function! s:accept(mode, path) abort
   let open_func_dic = get(g:, 'ctrlp_open_func', {})
   let open_func = get(open_func_dic, 'files', 'ctrlp#acceptfile')
@@ -70,6 +83,11 @@ function! ctrlp#explorer#accept(mode, str) abort
   endif
   if a:mode ==# 'r'
     call s:rename_file(path)
+    call ctrlp#init(ctrlp#explorer#id(), {'dir': s:cwd})
+    return
+  endif
+  if a:mode ==# 'd'
+    call s:delete_file(path)
     call ctrlp#init(ctrlp#explorer#id(), {'dir': s:cwd})
     return
   endif
