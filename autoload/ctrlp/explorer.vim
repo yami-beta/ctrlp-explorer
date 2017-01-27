@@ -46,6 +46,14 @@ function! s:convert_path(path) abort
   return fnamemodify(simplify(path), ":p")
 endfunction
 
+function! s:rename_file(target_path) abort
+  let target_dir = fnamemodify(a:target_path, ':p:h')
+  let target_filename = fnamemodify(a:target_path, ':p:t')
+  let new_filename = input('filename: ', target_filename)
+  let new_path = target_dir . '/' . new_filename
+  call rename(a:target_path, new_path)
+endfunction
+
 function! s:accept(mode, path) abort
   let open_func_dic = get(g:, 'ctrlp_open_func', {})
   let open_func = get(open_func_dic, 'files', 'ctrlp#acceptfile')
@@ -66,14 +74,6 @@ function! ctrlp#explorer#accept(mode, str) abort
     return
   endif
   call s:accept(a:mode, path)
-endfunction
-
-function! s:rename_file(target_path) abort
-  let target_dir = fnamemodify(a:target_path, ':p:h')
-  let target_filename = fnamemodify(a:target_path, ':p:t')
-  let new_filename = input('filename: ', target_filename)
-  let new_path = target_dir . '/' . new_filename
-  call rename(a:target_path, new_path)
 endfunction
 
 function! ctrlp#explorer#exit() abort
