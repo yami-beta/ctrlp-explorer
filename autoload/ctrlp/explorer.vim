@@ -80,11 +80,17 @@ function! s:create_file_or_directory(prompt_input) abort
   call s:accept(mode, target_path)
 endfunction
 
-function! s:rename_file(target_path) abort
-  let target_dir = fnamemodify(a:target_path, ':p:h')
-  let target_filename = fnamemodify(a:target_path, ':p:t')
-  let new_filename = input('filename: ', target_filename)
-  let new_path = target_dir . '/' . new_filename
+function! s:rename_file_or_directory(target_path) abort
+  let parent_dir = fnamemodify(a:target_path, ':p:h')
+  let target_name = fnamemodify(a:target_path, ':p:t')
+  let label = 'filename: '
+  if isdirectory(a:target_path)
+    let parent_dir = fnamemodify(parent_dir, ':h')
+    let target_name = fnamemodify(a:target_path, ':p:h:t')
+    let label = 'directory name: '
+  endif
+  let new_name = input(label, target_name)
+  let new_path = parent_dir . '/' . new_name
   call rename(a:target_path, new_path)
 endfunction
 
@@ -111,14 +117,14 @@ function! ctrlp#explorer#accept(mode, str) abort
     call s:create_file_or_directory(prompt_input)
     return
   endif
+  if a:mode ==# 'r'
+    call s:rename_file_or_directory(path)
+    call ctrlp#init(ctrlp#explorer#id(), {'dir': s:cwd})
+    return
+  endif
   if isdirectory(path)
     " cwdをpathに変更しCtrlPExplorerを起動
     call ctrlp#init(ctrlp#explorer#id(), {'dir': path})
-    return
-  endif
-  if a:mode ==# 'r'
-    call s:rename_file(path)
-    call ctrlp#init(ctrlp#explorer#id(), {'dir': s:cwd})
     return
   endif
   if a:mode ==# 'd'
