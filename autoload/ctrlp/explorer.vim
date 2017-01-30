@@ -40,10 +40,8 @@ endfunction
 function! ctrlp#explorer#init(...) abort
   call s:mapkey()
   let s:cwd = fnamemodify(getcwd(), ":p")
-  " ドットファイルを含む
-  " WindowsとMacで結果が異なるため，新しいglobパターンが必要
-  " Windowsでは，'./', '../' の2つが，glob(s:cwd . "/.??*", 0, 1) によって余計に含まれてしまう
-  let filelist = map([".."] + glob(s:cwd . "/*", 0, 1) + glob(s:cwd . "/.??*", 0, 1), 'fnamemodify(v:val, ":t") . (isdirectory(v:val) ? "/" : "")')
+  " Glob pattern for include dot files (e.g. .vimrc)
+  let filelist = map([".."] + glob(s:cwd."/*", 0, 1) + glob(s:cwd."/.[^.]*", 0, 1), 'fnamemodify(v:val, ":t") . (isdirectory(v:val) ? "/" : "")')
   return filelist
 endfunction
 
