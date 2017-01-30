@@ -22,6 +22,7 @@ endfunction
 function! s:mapkey() abort
   nnoremap <buffer> <c-r> :call ctrlp#explorer#accept('r', ctrlp#getcline())<cr>
   nnoremap <buffer> <c-d> :call ctrlp#explorer#accept('d', ctrlp#getcline())<cr>
+  nnoremap <buffer> <c-y> :call ctrlp#explorer#accept('y', ctrlp#getcline())<cr>
 endfunction
 
 function! s:unmapkey() abort
@@ -30,6 +31,9 @@ function! s:unmapkey() abort
   endif
   if mapcheck('<c-d>', 'n') !=# ''
     nunmap <buffer> <c-d>
+  endif
+  if mapcheck('<c-y>', 'n') !=# ''
+    nunmap <buffer> <c-y>
   endif
 endfunction
 
@@ -48,6 +52,32 @@ function! s:convert_path(path) abort
   " ctrlp#exit()を呼ぶ前であれば，s:cwdの代わりにgetcwd()でも可
   let path = s:cwd . '/' . a:path
   return fnamemodify(simplify(path), ":p")
+endfunction
+
+function! s:get_ctrlp_script_id()
+  let snlist = execute('scriptnames')
+  for line in split(snlist, "\n")
+    if line =~ 'autoload\/ctrlp\.vim$'
+      let sid = matchstr(line, '^[0-9]\+')
+      return sid
+    endif
+  endfor
+endfunction
+
+function! ctrlp#explorer#getinput() abort
+  let sid = s:get_ctrlp_script_id()
+  return function('<SNR>'.sid.'_getinput')()
+endfunction
+
+function! s:create_file_or_directory(prompt_input) abort
+  let mode = get(g:, 'ctrlp_open_new_file', 'e')
+  let target_path = fnamemodify(s:cwd.a:prompt_input, ':p')
+  if a:prompt_input =~ '\/$'
+    call mkdir(target_path)
+    call ctrlp#init(ctrlp#explorer#id(), {'dir': s:cwd})
+    return
+  endif
+  call s:accept(mode, target_path)
 endfunction
 
 function! s:rename_file(target_path) abort
@@ -74,8 +104,13 @@ function! s:accept(mode, path) abort
 endfunction
 
 function! ctrlp#explorer#accept(mode, str) abort
+  let prompt_input = ctrlp#explorer#getinput()
   call ctrlp#exit()
   let path = s:convert_path(a:str)
+  if a:mode ==# 'y'
+    call s:create_file_or_directory(prompt_input)
+    return
+  endif
   if isdirectory(path)
     " cwdをpathに変更しCtrlPExplorerを起動
     call ctrlp#init(ctrlp#explorer#id(), {'dir': path})
