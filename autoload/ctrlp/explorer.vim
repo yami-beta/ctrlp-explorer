@@ -94,12 +94,21 @@ function! s:rename_file_or_directory(target_path) abort
   call rename(a:target_path, new_path)
 endfunction
 
-function! s:delete_file(target_path) abort
+function! s:delete_file_or_directory(target_path) abort
   let target_path = fnamemodify(a:target_path, ':p')
-  let target_filename = fnamemodify(target_path, ':t')
-  let do_delete = confirm('Delete '.target_filename.' ? (y/n)', "&yes\n&no", 0)
+  let target_name = fnamemodify(target_path, ':t')
+  let is_directory = isdirectory(target_path)
+  if is_directory
+    let target_name = fnamemodify(target_path, ':p:h:t')
+  endif
+  let do_delete = confirm('Delete '.target_name.' ? (y/n)', "&yes\n&no", 0)
   if do_delete ==# 1
-    call delete(target_path)
+    let result = delete(target_path, is_directory ? 'd' : '')
+    if result !=# 0
+      echohl WarningMsg
+      echomsg 'Failed to delete '.target_name
+      echohl None
+    endif
   endif
 endfunction
 
@@ -122,14 +131,15 @@ function! ctrlp#explorer#accept(mode, str) abort
     call ctrlp#init(ctrlp#explorer#id(), {'dir': s:cwd})
     return
   endif
+  if a:mode ==# 'd'
+    call s:delete_file_or_directory(path)
+    call ctrlp#init(ctrlp#explorer#id(), {'dir': s:cwd})
+    return
+  endif
+
   if isdirectory(path)
     " cwdをpathに変更しCtrlPExplorerを起動
     call ctrlp#init(ctrlp#explorer#id(), {'dir': path})
-    return
-  endif
-  if a:mode ==# 'd'
-    call s:delete_file(path)
-    call ctrlp#init(ctrlp#explorer#id(), {'dir': s:cwd})
     return
   endif
   call s:accept(a:mode, path)
